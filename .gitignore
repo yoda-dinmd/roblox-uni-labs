@@ -1,0 +1,8 @@
+# Roblox/Rojo specific
+*.rbxlx.lock
+*.rbxl
+.rojo/
+
+# System files
+.DS_Store
+Thumbs.db
