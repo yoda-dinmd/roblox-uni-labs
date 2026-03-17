@@ -22,8 +22,9 @@ local rng = Random.new()
 -- Expose BPM for HUD
 workspace:SetAttribute("BPM", BPM)
 workspace:SetAttribute("AutoMix", AUTO_MIX)
-workspace:SetAttribute("ShowPadLabels", false)
+workspace:SetAttribute("ShowPadLabels", true)
 workspace:SetAttribute("TrapsEnabled", true)
+workspace:SetAttribute("TrapsOnPads", false)
 
 -- === LOOPS SOURCE ===
 -- Put Sound objects in Workspace/Music with names: Drums, Bass, Synth, FX
@@ -133,6 +134,17 @@ local function applyQueued()
 	end
 end
 
+local function resetMixState()
+	table.clear(toggleQueue)
+	for name, _ in pairs(loops) do
+		active[name] = false
+		workspace:SetAttribute("Loop_"..name, false)
+	end
+	soloLoop = nil
+	workspace:SetAttribute("SoloLoop", "")
+	refreshMix()
+end
+
 -- Optional light re-sync each bar (commented to avoid clicks on some assets)
 -- local function resync()
 --     for _, s in pairs(loops) do s.TimePosition = 0 end
@@ -212,6 +224,10 @@ function _G.DJ.SetFadeTime(newFade: number)
 	FADE_TIME = math.clamp(newFade, 0.05, 1.5)
 end
 
+function _G.DJ.ResetMixState()
+	resetMixState()
+end
+
 local function isPlayerNearLoopPad(player: Player, loopName: string): boolean
 	local character = player.Character
 	if not character then
@@ -276,5 +292,15 @@ controlEvent.OnServerEvent:Connect(function(player: Player, action: string, loop
 		_G.DJ.SetShowPadLabels(value == 1)
 	elseif action == "SetTrapsEnabled" then
 		_G.DJ.SetTrapsEnabled(value == 1)
+	elseif action == "RandomizeWithTraps" then
+		resetMixState()
+		if _G.PadLayout and _G.PadLayout.RandomizeWithTraps then
+			_G.PadLayout.RandomizeWithTraps()
+		end
+	elseif action == "ResetInitialLayout" then
+		resetMixState()
+		if _G.PadLayout and _G.PadLayout.ResetInitialLayout then
+			_G.PadLayout.ResetInitialLayout()
+		end
 	end
 end)

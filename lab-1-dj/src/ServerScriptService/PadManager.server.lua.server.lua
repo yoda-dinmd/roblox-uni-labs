@@ -10,6 +10,7 @@ local ROWS, COLS  = 3, 3              -- keep your existing grid
 local SPACING     = 8
 local PAD_SIZE    = Vector3.new(8, 1, 8)
 local FORWARD_OFFSET = 30
+local DEFAULT_PAD_COLOR = Color3.fromRGB(230, 230, 230)
 
 local spawn = workspace:FindFirstChildOfClass("SpawnLocation")
 local spawnPos = spawn and spawn.Position or Vector3.new(0, 0, 0)
@@ -63,7 +64,7 @@ local function makePad(pos: Vector3, nameSuffix: string?)
 	p.CanCollide = true
 	p.CanTouch = true
 	p.Material = Enum.Material.Neon
-	p.Color = Color3.fromRGB(230,230,230)
+	p.Color = DEFAULT_PAD_COLOR
 	p.Transparency = 0.2
 	p.Position = Vector3.new(pos.X, GRID_Y, pos.Z)
 	p.Name = nameSuffix and ("Pad_"..nameSuffix) or "Pad"
@@ -330,11 +331,13 @@ end
 local function ensurePadLabel(pad: BasePart): TextLabel
 	local billboard = pad:FindFirstChild("PadLabelGui")
 	if not billboard then
-		billboard = Instance.new("BillboardGui")
+		billboard = Instance.new("SurfaceGui")
 		billboard.Name = "PadLabelGui"
-		billboard.Size = UDim2.new(0, 120, 0, 30)
-		billboard.StudsOffset = Vector3.new(0, 3.6, 0)
-		billboard.AlwaysOnTop = true
+		billboard.Face = Enum.NormalId.Top
+		billboard.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		billboard.PixelsPerStud = 24
+		billboard.LightInfluence = 1
+		billboard.CanvasSize = Vector2.new(220, 70)
 		billboard.Parent = pad
 	end
 
@@ -344,7 +347,7 @@ local function ensurePadLabel(pad: BasePart): TextLabel
 		text.Name = "Text"
 		text.Size = UDim2.new(1, 0, 1, 0)
 		text.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		text.BackgroundTransparency = 0.25
+		text.BackgroundTransparency = 0.4
 		text.TextColor3 = Color3.fromRGB(255, 255, 255)
 		text.TextScaled = true
 		text.Font = Enum.Font.GothamBold
@@ -386,47 +389,102 @@ table.sort(pads, function(a, b)
 	end
 	return a.Position.Z < b.Position.Z
 end)
-for _, pad in ipairs(pads) do
+local initialPositions = {}
+for idx, pad in ipairs(pads) do
 	if pad:IsA("BasePart") then
+		initialPositions[idx] = pad.Position
 		pad:SetAttribute("Loop", nil)
 		pad:SetAttribute("Trap", nil)
 		pad.Name = "Pad"
-		pad.Color = Color3.fromRGB(230, 230, 230)
+		pad.Color = DEFAULT_PAD_COLOR
 		ensurePadLabel(pad)
 	end
 end
 
-local shuffledPads = shuffledCopy(pads)
-local assignIndex = 1
-for _, loopName in ipairs(LOOP_ORDER) do
-	local pad = shuffledPads[assignIndex]
-	if not pad then
-		break
+local function clearRolesAndVisuals()
+	for _, pad in ipairs(pads) do
+		if pad:IsA("BasePart") then
+			pad:SetAttribute("Loop", nil)
+			pad:SetAttribute("Trap", nil)
+			pad.Name = "Pad"
+			pad.Color = DEFAULT_PAD_COLOR
+		end
 	end
-	if pad:IsA("BasePart") then
-		pad:SetAttribute("Loop", loopName)
-		pad.Name = "Pad_" .. loopName
-	end
-	assignIndex += 1
 end
 
-for _, trapName in ipairs(TRAP_ORDER) do
-	local pad = shuffledPads[assignIndex]
-	if not pad then
-		break
+local function assignLoopPadsFixed()
+	for i = 1, math.min(4, #pads) do
+		local pad = pads[i]
+		if pad and pad:IsA("BasePart") then
+			pad:SetAttribute("Loop", LOOP_ORDER[i])
+			pad.Name = "Pad_" .. LOOP_ORDER[i]
+		end
 	end
-	if pad:IsA("BasePart") then
-		pad:SetAttribute("Trap", trapName)
-		pad.Name = "Pad_" .. trapName
-		pad.Color = Color3.fromRGB(230, 230, 230)
-	end
-	assignIndex += 1
 end
+
+local function assignTrapsFixed()
+	local trapStart = 5
+	for i = trapStart, math.min(trapStart + #TRAP_ORDER - 1, #pads) do
+		local trapName = TRAP_ORDER[i - trapStart + 1]
+		local pad = pads[i]
+		if pad and pad:IsA("BasePart") then
+			pad:SetAttribute("Trap", trapName)
+			pad.Name = "Pad_" .. trapName
+		end
+	end
+end
+
+local function applyPositionsFromList(positionList)
+	for i, pad in ipairs(pads) do
+		if pad:IsA("BasePart") and positionList[i] then
+			local pos = positionList[i]
+			pad.Position = Vector3.new(pos.X, GRID_Y, pos.Z)
+		end
+	end
+end
+
+local function randomizePadPositions()
+	local shuffled = shuffledCopy(initialPositions)
+	applyPositionsFromList(shuffled)
+end
+
+local function applyInitialLayoutNoTraps()
+	applyPositionsFromList(initialPositions)
+	clearRolesAndVisuals()
+	assignLoopPadsFixed()
+	workspace:SetAttribute("ShowPadLabels", true)
+	workspace:SetAttribute("TrapsOnPads", false)
+	refreshPadLabels(pads)
+	workspace:SetAttribute("TrapsEnabled", false)
+end
+
+local function applyRandomizedLayoutWithTraps()
+	randomizePadPositions()
+	clearRolesAndVisuals()
+	assignLoopPadsFixed()
+	assignTrapsFixed()
+	workspace:SetAttribute("ShowPadLabels", false)
+	workspace:SetAttribute("TrapsOnPads", true)
+	refreshPadLabels(pads)
+	workspace:SetAttribute("TrapsEnabled", true)
+end
+
+applyInitialLayoutNoTraps()
+workspace:SetAttribute("ShowPadLabels", true)
 
 refreshPadLabels(pads)
 workspace:GetAttributeChangedSignal("ShowPadLabels"):Connect(function()
 	refreshPadLabels(pads)
 end)
+
+_G.PadLayout = _G.PadLayout or {}
+function _G.PadLayout.RandomizeWithTraps()
+	applyRandomizedLayoutWithTraps()
+end
+
+function _G.PadLayout.ResetInitialLayout()
+	applyInitialLayoutNoTraps()
+end
 
 -- Visual state: tint pads when their loop is active
 local function bindActiveTint(pad: Part, loopName: string)
@@ -517,36 +575,38 @@ for _, pad in ipairs(pads) do
 	end
 
 	local trapName = pad:GetAttribute("Trap")
-	if trapName then
-		local cooldownUntil = 0
-		local touchedBy = {}
-		pad.Touched:Connect(function(hit)
-			if workspace:GetAttribute("TrapsEnabled") == false then
-				return
-			end
-			if os.clock() < cooldownUntil then
-				return
-			end
-			local character, hum = getCharacterFromHit(hit)
-			if not character or not hum then
-				return
-			end
-			local perCharacterKey = character:GetFullName()
-			if touchedBy[perCharacterKey] and os.clock() - touchedBy[perCharacterKey] < 1.5 then
-				return
-			end
-			touchedBy[perCharacterKey] = os.clock()
-			cooldownUntil = os.clock() + 0.7
+	local cooldownUntil = 0
+	local touchedBy = {}
+	pad.Touched:Connect(function(hit)
+		local dynamicTrapName = pad:GetAttribute("Trap")
+		if type(dynamicTrapName) ~= "string" then
+			return
+		end
+		if workspace:GetAttribute("TrapsEnabled") == false then
+			return
+		end
+		if os.clock() < cooldownUntil then
+			return
+		end
+		local character, hum = getCharacterFromHit(hit)
+		if not character or not hum then
+			return
+		end
+		local perCharacterKey = character:GetFullName()
+		if touchedBy[perCharacterKey] and os.clock() - touchedBy[perCharacterKey] < 1.5 then
+			return
+		end
+		touchedBy[perCharacterKey] = os.clock()
+		cooldownUntil = os.clock() + 0.7
 
-			local old = pad.Color
-			pad.Color = Color3.fromRGB(255, 255, 255)
-			task.delay(0.12, function()
-				if pad and pad.Parent then
-					pad.Color = old
-				end
-			end)
-
-			triggerTrap(trapName, character, hum)
+		local old = pad.Color
+		pad.Color = Color3.fromRGB(255, 255, 255)
+		task.delay(0.12, function()
+			if pad and pad.Parent then
+				pad.Color = old
+			end
 		end)
-	end
+
+		triggerTrap(dynamicTrapName, character, hum)
+	end)
 end
