@@ -80,7 +80,7 @@ panel.Parent = gui
 
 local settingsPanel = Instance.new("Frame")
 settingsPanel.Name = "DJSettings"
-settingsPanel.Size = UDim2.new(0, 280, 0, 290)
+settingsPanel.Size = UDim2.new(0, 280, 0, 390)
 settingsPanel.Position = UDim2.new(0.03, 0, 0.36, 0)
 settingsPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
 settingsPanel.BackgroundTransparency = 0.15
@@ -145,9 +145,29 @@ trapsBtn.TextSize = 16
 trapsBtn.Text = "Traps"
 trapsBtn.Parent = settingsPanel
 
+local randomizeBtn = Instance.new("TextButton")
+randomizeBtn.Size = UDim2.new(1, -24, 0, 40)
+randomizeBtn.Position = UDim2.new(0, 12, 0, 186)
+randomizeBtn.BackgroundColor3 = Color3.fromRGB(90, 120, 200)
+randomizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+randomizeBtn.Font = Enum.Font.GothamBold
+randomizeBtn.TextSize = 16
+randomizeBtn.Text = "Randomize + Traps"
+randomizeBtn.Parent = settingsPanel
+
+local resetLayoutBtn = Instance.new("TextButton")
+resetLayoutBtn.Size = UDim2.new(1, -24, 0, 40)
+resetLayoutBtn.Position = UDim2.new(0, 12, 0, 232)
+resetLayoutBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+resetLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+resetLayoutBtn.Font = Enum.Font.GothamBold
+resetLayoutBtn.TextSize = 16
+resetLayoutBtn.Text = "Reset Initial Layout"
+resetLayoutBtn.Parent = settingsPanel
+
 local bpmTitle = Instance.new("TextLabel")
 bpmTitle.Size = UDim2.new(1, -24, 0, 24)
-bpmTitle.Position = UDim2.new(0, 12, 0, 188)
+bpmTitle.Position = UDim2.new(0, 12, 0, 286)
 bpmTitle.BackgroundTransparency = 1
 bpmTitle.TextXAlignment = Enum.TextXAlignment.Left
 bpmTitle.TextColor3 = Color3.fromRGB(225, 225, 225)
@@ -158,7 +178,7 @@ bpmTitle.Parent = settingsPanel
 
 local bpmMinusBtn = Instance.new("TextButton")
 bpmMinusBtn.Size = UDim2.new(0, 44, 0, 38)
-bpmMinusBtn.Position = UDim2.new(0, 12, 0, 218)
+bpmMinusBtn.Position = UDim2.new(0, 12, 0, 316)
 bpmMinusBtn.BackgroundColor3 = Color3.fromRGB(58, 58, 70)
 bpmMinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 bpmMinusBtn.Font = Enum.Font.GothamBold
@@ -168,7 +188,7 @@ bpmMinusBtn.Parent = settingsPanel
 
 local bpmValueLabel = Instance.new("TextLabel")
 bpmValueLabel.Size = UDim2.new(0, 110, 0, 38)
-bpmValueLabel.Position = UDim2.new(0, 64, 0, 218)
+bpmValueLabel.Position = UDim2.new(0, 64, 0, 316)
 bpmValueLabel.BackgroundColor3 = Color3.fromRGB(38, 38, 46)
 bpmValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 bpmValueLabel.Font = Enum.Font.GothamBold
@@ -178,7 +198,7 @@ bpmValueLabel.Parent = settingsPanel
 
 local bpmPlusBtn = Instance.new("TextButton")
 bpmPlusBtn.Size = UDim2.new(0, 44, 0, 38)
-bpmPlusBtn.Position = UDim2.new(0, 182, 0, 218)
+bpmPlusBtn.Position = UDim2.new(0, 182, 0, 316)
 bpmPlusBtn.BackgroundColor3 = Color3.fromRGB(58, 58, 70)
 bpmPlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 bpmPlusBtn.Font = Enum.Font.GothamBold
@@ -319,11 +339,16 @@ local function refreshSettingsPanel()
 	end
 
 	local trapsEnabled = workspace:GetAttribute("TrapsEnabled") ~= false
-	if trapsEnabled then
+	local trapsOnPads = workspace:GetAttribute("TrapsOnPads") == true
+	trapsBtn.Visible = trapsOnPads
+	if trapsOnPads and trapsEnabled then
 		trapsBtn.Text = "Traps: ON"
 		trapsBtn.BackgroundColor3 = Color3.fromRGB(255, 170, 60)
-	else
+	elseif trapsOnPads then
 		trapsBtn.Text = "Traps: OFF"
+		trapsBtn.BackgroundColor3 = Color3.fromRGB(58, 58, 70)
+	else
+		trapsBtn.Text = "Traps"
 		trapsBtn.BackgroundColor3 = Color3.fromRGB(58, 58, 70)
 	end
 end
@@ -378,6 +403,14 @@ end)
 trapsBtn.MouseButton1Click:Connect(function()
 	local nextValue = workspace:GetAttribute("TrapsEnabled") == false
 	controlEvent:FireServer("SetTrapsEnabled", nil, nextValue and 1 or 0)
+end)
+
+randomizeBtn.MouseButton1Click:Connect(function()
+	controlEvent:FireServer("RandomizeWithTraps", nil, 1)
+end)
+
+resetLayoutBtn.MouseButton1Click:Connect(function()
+	controlEvent:FireServer("ResetInitialLayout", nil, 1)
 end)
 
 bpmMinusBtn.MouseButton1Click:Connect(function()
@@ -446,6 +479,7 @@ workspace:GetAttributeChangedSignal("AutoMix"):Connect(refreshSettingsPanel)
 workspace:GetAttributeChangedSignal("BPM"):Connect(refreshSettingsPanel)
 workspace:GetAttributeChangedSignal("ShowPadLabels"):Connect(refreshSettingsPanel)
 workspace:GetAttributeChangedSignal("TrapsEnabled"):Connect(refreshSettingsPanel)
+workspace:GetAttributeChangedSignal("TrapsOnPads"):Connect(refreshSettingsPanel)
 for _, name in ipairs(LOOP_ORDER) do
 	workspace:GetAttributeChangedSignal("LoopVolume_" .. name):Connect(refreshControlPanel)
 end
