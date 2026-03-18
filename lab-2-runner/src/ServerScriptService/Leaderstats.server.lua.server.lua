@@ -27,21 +27,6 @@ if not obstacleHitEvent then
 	obstacleHitEvent.Parent = ReplicatedStorage
 end
 
--- RemoteEvent for debug coin addition
-local debugCoinEvent = ReplicatedStorage:FindFirstChild("DebugAddCoins")
-if not debugCoinEvent then
-	debugCoinEvent = Instance.new("RemoteEvent")
-	debugCoinEvent.Name = "DebugAddCoins"
-	debugCoinEvent.Parent = ReplicatedStorage
-end
-
-debugCoinEvent.OnServerEvent:Connect(function(player, amount)
-	local stats = player:FindFirstChild("leaderstats")
-	if stats and stats:FindFirstChild("Coins") then
-		stats.Coins.Value += amount
-	end
-end)
-
 -- SETTINGS
 local SEGMENT_LENGTH = 50
 local SEGMENT_WIDTH = 30
@@ -758,7 +743,16 @@ RunService.Heartbeat:Connect(function()
 					-- Collect coin
 					local stats = player:FindFirstChild("leaderstats")
 					if stats and stats:FindFirstChild("Coins") then
-						stats.Coins.Value += 1
+						local coinReward = 1
+						local gameState = player:FindFirstChild("GameState")
+						if gameState then
+							local tempBoostEnd = gameState:FindFirstChild("TempSpeedBoostEnd")
+							if tempBoostEnd and tick() < tempBoostEnd.Value then
+								coinReward = 5
+							end
+						end
+
+						stats.Coins.Value += coinReward
 						
 						-- Play coin pickup sound
 						local sound = Instance.new("Sound")

@@ -8,7 +8,6 @@ local camera = workspace.CurrentCamera
 local advanceEvent = ReplicatedStorage:WaitForChild("RunnerAdvance")
 local shopDataEvent = ReplicatedStorage:WaitForChild("ShopData")
 local obstacleHitEvent = ReplicatedStorage:WaitForChild("ObstacleHit")
-local debugCoinEvent = ReplicatedStorage:WaitForChild("DebugAddCoins")
 
 -- Disable mouse camera movement and zooming
 local mouse = player:GetMouse()
@@ -110,23 +109,6 @@ shieldLabel.Text = ""
 shieldLabel.Visible = false
 shieldLabel.ZIndex = 1000
 shieldLabel.Parent = screenGui
-
--- Debug button: Add coins
-local debugButton = Instance.new("TextButton")
-debugButton.Name = "DebugButton"
-debugButton.Size = UDim2.new(0, 120, 0, 40)
-debugButton.Position = UDim2.new(0, 20, 0, 80)
-debugButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
-debugButton.BackgroundTransparency = 0.3
-debugButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-debugButton.TextSize = 14
-debugButton.Font = Enum.Font.GothamBold
-debugButton.Text = "+10 Coins"
-debugButton.Parent = screenGui
-
-debugButton.MouseButton1Click:Connect(function()
-	debugCoinEvent:FireServer(10)
-end)
 
 -- Shop mode indicator
 local shopLabel = Instance.new("TextLabel")
