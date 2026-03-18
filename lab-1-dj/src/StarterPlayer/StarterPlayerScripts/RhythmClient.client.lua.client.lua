@@ -32,14 +32,10 @@ local function makeLabel(text, y)
 end
 
 local bpmL = makeLabel("BPM: --", 0.06)
-local drumsL = makeLabel("Drums: OFF", 0.11)
-local bassL = makeLabel("Bass:  OFF", 0.16)
-local synthL = makeLabel("Synth: OFF", 0.21)
-local fxL = makeLabel("FX:    OFF", 0.26)
 
 local openSettingsBtn = Instance.new("TextButton")
 openSettingsBtn.Size = UDim2.new(0, 170, 0, 34)
-openSettingsBtn.Position = UDim2.new(0.03, 0, 0.315, 0)
+openSettingsBtn.Position = UDim2.new(0.03, 0, 0.125, 0)
 openSettingsBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
 openSettingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 openSettingsBtn.Font = Enum.Font.GothamBold
@@ -47,26 +43,10 @@ openSettingsBtn.TextSize = 14
 openSettingsBtn.Text = "Open DJ Settings"
 openSettingsBtn.Parent = gui
 
-local map = {
-	{ attr = "Loop_Drums", label = drumsL, name = "Drums" },
-	{ attr = "Loop_Bass", label = bassL, name = "Bass" },
-	{ attr = "Loop_Synth", label = synthL, name = "Synth" },
-	{ attr = "Loop_FX", label = fxL, name = "FX" },
-}
-
 workspace:GetAttributeChangedSignal("BPM"):Connect(function()
 	bpmL.Text = "BPM: " .. tostring(workspace:GetAttribute("BPM") or 0)
 end)
 bpmL.Text = "BPM: " .. tostring(workspace:GetAttribute("BPM") or 0)
-
-for _, item in ipairs(map) do
-	local function update()
-		local on = workspace:GetAttribute(item.attr)
-		item.label.Text = string.format("%s: %s", item.name, on and "ON" or "OFF")
-	end
-	workspace:GetAttributeChangedSignal(item.attr):Connect(update)
-	update()
-end
 
 local panel = Instance.new("Frame")
 panel.Name = "LoopControl"
@@ -81,7 +61,7 @@ panel.Parent = gui
 local settingsPanel = Instance.new("Frame")
 settingsPanel.Name = "DJSettings"
 settingsPanel.Size = UDim2.new(0, 280, 0, 390)
-settingsPanel.Position = UDim2.new(0.03, 0, 0.36, 0)
+settingsPanel.Position = UDim2.new(0.03, 0, 0.17, 0)
 settingsPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
 settingsPanel.BackgroundTransparency = 0.15
 settingsPanel.BorderSizePixel = 0
